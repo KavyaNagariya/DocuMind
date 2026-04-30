@@ -1,0 +1,25 @@
+# --- Core Framework ---
+fastapi~=0.110.0
+uvicorn~=0.27.1
+python-dotenv~=1.0.1
+pydantic~=2.6.3
+
+# --- LangChain & Orchestration ---
+langchain~=0.1.12
+langchain-community~=0.0.28
+# We do NOT pin langchain-core; let the resolver handle the sub-dependency
+
+# --- AI Models (The Conflict Fix) ---
+langchain-google-genai~=1.0.1
+langchain-huggingface~=0.0.3
+# We upgrade this to satisfy the >=2.6.0 requirement of langchain-huggingface
+sentence-transformers>=2.6.0
+google-generativeai~=0.4.1
+
+# --- Vector Database ---
+pinecone-client~=3.2.2
+langchain-pinecone~=0.1.0
+
+# --- Document Processing ---
+pypdf~=4.1.0
+unstructured~=0.16.0
