@@ -3,7 +3,7 @@ from app.services.rag_service import RAGService
 from pydantic import BaseModel
 
 
-app = FastAPI()
+app = FastAPI(title="Documind Enterprise v1.0")
 rag_service = RAGService()
 
 
@@ -14,8 +14,11 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    response = rag_service.answer_question(request.message, request.history)
+    result = rag_service.answer_question(request.message, request.history)
     return {
-            "answer": response["answer"],
-            "sources": [doc.metadata for doc in response["source_documents"]]
-            }
+            "answer": result["answer"],
+            "citations": [
+                {"sources": doc.metadata.get("source"), "page": doc.metadata.get("page")}
+                for doc in result["context"]
+            ]
+    }

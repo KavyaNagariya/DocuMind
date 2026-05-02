@@ -1,3 +1,7 @@
 venv
 .env
 __pycache__
+/graphify-out 
+.obsidian
+PLAN.md
+
