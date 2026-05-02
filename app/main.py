@@ -15,10 +15,11 @@ class ChatRequest(BaseModel):
 @app.post("/chat")
 async def chat(request: ChatRequest):
     result = rag_service.answer_question(request.message, request.history)
+    docs = result.get("context", [])
     return {
             "answer": result["answer"],
             "citations": [
                 {"sources": doc.metadata.get("source"), "page": doc.metadata.get("page")}
-                for doc in result["context"]
-            ]
+                for doc in docs
+            ] if docs else []
     }
