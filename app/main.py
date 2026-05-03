@@ -19,7 +19,11 @@ async def chat(request: ChatRequest):
     return {
             "answer": result["answer"],
             "citations": [
-                {"sources": doc.metadata.get("source"), "page": doc.metadata.get("page")}
+                {
+                    "sources": doc.metadata.get("source"),
+                    "page": doc.metadata.get("page"),
+                    "snippet": doc.page_content[:200] + "..."
+                 }
                 for doc in docs
             ] if docs else []
     }

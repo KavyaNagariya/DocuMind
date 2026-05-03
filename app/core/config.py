@@ -7,7 +7,7 @@ load_dotenv()
 
 def get_llm():
     api_key = os.getenv("GOOGLE_API_KEY")
-    
+   
     if not api_key:
         raise ValueError("Critical: GOOGLE_API_KEY not found in environment. Check your .env file or system variables.")
 

@@ -61,29 +61,30 @@ class RAGService:
             # 2. Contextualization: Solving the 'It' Problem
             standalone_query = self._get_standalone_question(question, windowed_history)
             
-            logger.info("--- RAG TRACE ---")
-            logger.info(f"Original Question: {question}")
-            logger.info(f"Rephrased Query: {standalone_query}")
+            #logger.info("--- RAG TRACE ---")
+            #logger.info(f"Original Question: {question}")
+            #logger.info(f"Rephrased Query: {standalone_query}")
 
           #  retrieved_docs = self.retriever.invoke(standalone_query)
-            retrieved_docs = self.retriever.invoke(question)
-            logger.info(f"Total Chunks Found: {len(retrieved_docs)}")
+            retrieved_docs = self.retriever.invoke(standalone_query)
+#            logger.info(f"Total Chunks Found: {len(retrieved_docs)}")
 
-            for i, doc in enumerate(retrieved_docs):
-                logger.info(f"Chunk {i} (Source: {doc.metadata.get('source')}): {doc.page_content[:150]}...")
+#            for i, doc in enumerate(retrieved_docs):
+  #              logger.info(f"Chunk {i} (Source: {doc.metadata.get('source')}): {doc.page_content[:150]}...")
 
             if not retrieved_docs:
                 return {
                         "answer": "I found your resume in the archive, but I couldn't find it",
                         "status": "partial_success",
-                        "standalone_query": standalone_query
+                       # "standalone_query": standalone_query
+                       "context": []
                     }
             # 3. The Enterprise RAG Chain
             # We use a dictionary mapping to ensure the 'context' is captured 
             # and that all variables in RAG_PROMPT_TEMPLATE are satisfied.
             rag_chain = (
                 RunnableParallel({
-                    "context": itemgetter("query") | self.retriever,
+                    "context": itemgetter("docs") ,#| self.retriever,
                     "chat_history": itemgetter("chat_history"),
                     "input": itemgetter("original_input"),
                     "question": itemgetter("original_input") # Map both if template varies
@@ -96,7 +97,8 @@ class RAGService:
 
             # 4. Execution
             result = rag_chain.invoke({
-                "query": standalone_query,
+                #"query": standalone_query,
+                "docs": retrieved_docs,
                 "original_input": question,
                 "chat_history": windowed_history 
             })
