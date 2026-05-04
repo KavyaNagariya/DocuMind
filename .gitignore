@@ -4,4 +4,4 @@ __pycache__
 /graphify-out 
 .obsidian
 PLAN.md
-
+.graphifyignore
