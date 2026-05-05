@@ -4,7 +4,7 @@ import os
 
 def init_pinecone():
     pc = Pinecone(api_key=os.getenv("PINECONE_API_KEY"))
-    index_name = "documing-enterprise"
+    index_name = "documind-enterprise"
 
     if index_name not in pc.list_indexes().names():
         pc.create_index(

@@ -1,7 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, UploadFile, File, HTTPException
+import os
+import shutil
 from app.services.rag_service import RAGService
+from app.ingest_docs import run_ingestion
 from pydantic import BaseModel
-
 
 app = FastAPI(title="Documind Enterprise v1.0")
 rag_service = RAGService()
@@ -27,3 +29,21 @@ async def chat(request: ChatRequest):
                 for doc in docs
             ] if docs else []
     }
+
+@app.post("/upload")
+async def upload_document(file: UploadFile = File(...)):
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+    
+    os.makedirs("documents", exist_ok=True)
+    file_path = os.path.join("documents", file.filename)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    try:
+        # Run the ingestion pipeline for the newly uploaded file
+        run_ingestion(file_path)
+        return {"message": f"Successfully uploaded and ingested {file.filename}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}")
