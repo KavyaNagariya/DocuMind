@@ -72,6 +72,27 @@ uvicorn app.main:app --reload
 ```
 The server will be available at `http://127.0.0.1:8000`.
 
+### 3. Run the Frontend
+The frontend is built with Next.js and Bun. It provides a sleek, dark-mode interface for chatting and managing documents.
+
+```bash
+cd frontend
+bun install
+bun run dev
+```
+The frontend will be available at `http://localhost:3000`.
+
+## 🛠️ Development & Tooling
+
+### Knowledge Graph
+This project uses **Graphify** to generate a navigable knowledge graph of the codebase and document relationships.
+- View reports in `graphify-out/GRAPH_REPORT.md`.
+- Open `graphify-out/graph.html` in your browser for an interactive visualization.
+
+### Formatting & Linting
+- **Backend:** Uses `ruff` or `flake8` (optional).
+- **Frontend:** `bun run lint` and `bun run typecheck`.
+
 ## 🛣️ API Endpoints
 
 ### `POST /chat`
@@ -98,6 +119,11 @@ Interact with the RAG service.
   ]
 }
 ```
+
+### `POST /upload`
+Upload multiple PDF documents for ingestion.
+
+**Request Body:** `multipart/form-data` with `files` field.
 
 ## 📁 Project Structure
 

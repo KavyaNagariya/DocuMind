@@ -1,4 +1,5 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import os
 import shutil
@@ -7,6 +8,16 @@ from app.ingest_docs import run_ingestion
 from pydantic import BaseModel
 
 app = FastAPI(title="Documind Enterprise v1.0")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, specify the actual origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 rag_service = RAGService()
 
 
