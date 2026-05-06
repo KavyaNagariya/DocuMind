@@ -43,24 +43,19 @@ async def chat(request: ChatRequest):
     }
 
 @app.post("/upload")
-async def upload_documents(files: List[UploadFile] = File(...)):
-    os.makedirs("documents", exist_ok=True)
-    uploaded_files = []
+async def upload_document(file: UploadFile = File(...)):
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
     
-    for file in files:
-        if not file.filename.endswith(".pdf"):
-            raise HTTPException(status_code=400, detail=f"File {file.filename} is not a PDF. Only PDF files are supported.")
+    os.makedirs("documents", exist_ok=True)
+    file_path = os.path.join("documents", file.filename)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
         
-        file_path = os.path.join("documents", file.filename)
-        
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-            
-        try:
-            # Run the ingestion pipeline for the newly uploaded file
-            run_ingestion(file_path)
-            uploaded_files.append(file.filename)
-        except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Ingestion failed for {file.filename}: {str(e)}")
-            
-    return {"message": f"Successfully uploaded and ingested {len(uploaded_files)} files.", "files": uploaded_files}
+    try:
+        # Run the ingestion pipeline for the newly uploaded file
+        run_ingestion(file_path)
+        return {"message": f"Successfully uploaded and ingested {file.filename}"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}")
