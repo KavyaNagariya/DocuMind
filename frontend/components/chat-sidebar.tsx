@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Plus, MessageSquare, Files, Settings } from "lucide-react"
+import { Plus, MessageSquare, Trash2 } from "lucide-react"
+import { useChat } from "@/lib/chat-context"
 
 import {
   Sidebar,
@@ -9,6 +10,7 @@ import {
   SidebarFooter,
   SidebarHeader,
   SidebarMenu,
+  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarGroup,
@@ -17,6 +19,8 @@ import {
 } from "@/components/ui/sidebar"
 
 export function ChatSidebar() {
+  const { sessions, activeSessionId, createNewSession, setActiveSession, deleteSession } = useChat()
+
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader>
@@ -39,7 +43,7 @@ export function ChatSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton tooltip="New Chat">
+                <SidebarMenuButton tooltip="New Chat" onClick={createNewSession}>
                   <Plus className="size-4" />
                   <span>New Chat</span>
                 </SidebarMenuButton>
@@ -47,41 +51,40 @@ export function ChatSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton isActive>
-                  <MessageSquare className="size-4" />
-                  <span>Financial Report Q4</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>
-                  <MessageSquare className="size-4" />
-                  <span>SOP Analysis</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        
+        {sessions.length > 0 && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Recent Chats</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {sessions.map((session) => (
+                  <SidebarMenuItem key={session.id}>
+                    <SidebarMenuButton 
+                      isActive={activeSessionId === session.id}
+                      onClick={() => setActiveSession(session.id)}
+                    >
+                      <MessageSquare className="size-4" />
+                      <span className="truncate">{session.title}</span>
+                    </SidebarMenuButton>
+                    <SidebarMenuAction
+                      showOnHover
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        deleteSession(session.id)
+                      }}
+                    >
+                      <Trash2 className="size-3 hover:text-destructive" />
+                      <span className="sr-only">Delete Chat</span>
+                    </SidebarMenuAction>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Documents">
-              <Files className="size-4" />
-              <span>Documents</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Settings">
-              <Settings className="size-4" />
-              <span>Settings</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        {/* Settings and Documents removed as requested/not functional */}
       </SidebarFooter>
     </Sidebar>
   )
