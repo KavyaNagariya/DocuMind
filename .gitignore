@@ -16,3 +16,10 @@ frontend/.env*
 frontend/bun.lock
 frontend/bun.lockb
 *.log
+
+.agents/
+.gemini/
+.opencode/
+AGENTS.md
+GEMINI.md
+conductor/

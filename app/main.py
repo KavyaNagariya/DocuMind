@@ -6,6 +6,8 @@ import shutil
 from app.services.rag_service import RAGService
 from app.ingest_docs import run_ingestion
 from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
+import json
 
 app = FastAPI(title="Documind Enterprise v1.0")
 
@@ -28,34 +30,47 @@ class ChatRequest(BaseModel):
 
 @app.post("/chat")
 async def chat(request: ChatRequest):
-    result = rag_service.answer_question(request.message, request.history)
-    docs = result.get("context", [])
-    return {
-            "answer": result["answer"],
-            "citations": [
-                {
-                    "sources": doc.metadata.get("source"),
-                    "page": doc.metadata.get("page"),
-                    "snippet": doc.page_content[:200] + "..."
-                 }
-                for doc in docs
-            ] if docs else []
-    }
+    async def event_generator():
+        async for chunk in rag_service.stream_answer(request.message, request.history):
+            if chunk:
+                if chunk.startswith("__CITATIONS__"):
+                    citations_json = chunk.replace("__CITATIONS__", "")
+                    yield f"event: citations\ndata: {citations_json}\n\n"
+                else:
+                    payload = json.dumps({"token": chunk})
+                    yield f"event: token\ndata: {payload}\n\n"
+
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 @app.post("/upload")
-async def upload_document(file: UploadFile = File(...)):
-    if not file.filename.endswith(".pdf"):
-        raise HTTPException(status_code=400, detail="Only PDF files are supported.")
+async def upload_documents(files: List[UploadFile] = File(...)):
+    uploaded_files = []
+    errors = []
     
     os.makedirs("documents", exist_ok=True)
-    file_path = os.path.join("documents", file.filename)
     
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    for file in files:
+        if not file.filename.endswith(".pdf"):
+            errors.append(f"{file.filename}: Only PDF files are supported.")
+            continue
         
-    try:
-        # Run the ingestion pipeline for the newly uploaded file
-        run_ingestion(file_path)
-        return {"message": f"Successfully uploaded and ingested {file.filename}"}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Ingestion failed: {str(e)}")
+        file_path = os.path.join("documents", file.filename)
+        
+        try:
+            with open(file_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+                
+            # Run the ingestion pipeline for the newly uploaded file
+            run_ingestion(file_path)
+            uploaded_files.append(file.filename)
+        except Exception as e:
+            errors.append(f"{file.filename}: Ingestion failed: {str(e)}")
+            
+    if errors and not uploaded_files:
+        raise HTTPException(status_code=500, detail={"message": "All uploads failed", "errors": errors})
+    
+    return {
+        "message": f"Successfully processed {len(uploaded_files)} files.",
+        "uploaded": uploaded_files,
+        "errors": errors
+    }
