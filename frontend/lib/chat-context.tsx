@@ -30,6 +30,7 @@ interface ChatContextType {
   addMessageToActiveSession: (message: Message) => void
   updateLastMessage: (partial: Partial<Message>, append?: boolean) => void
   deleteSession: (id: string) => void
+  renameSession: (id: string, newTitle: string) => void
 }
 
 const ChatContext = React.createContext<ChatContextType | undefined>(undefined)
@@ -134,6 +135,12 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const renameSession = (id: string, newTitle: string) => {
+    setSessions((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, title: newTitle } : s))
+    )
+  }
+
   const activeSession = React.useMemo(
     () => sessions.find((s) => s.id === activeSessionId) || null,
     [sessions, activeSessionId]
@@ -150,6 +157,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         addMessageToActiveSession,
         updateLastMessage,
         deleteSession,
+        renameSession,
       }}
     >
       {children}

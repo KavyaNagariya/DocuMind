@@ -11,13 +11,15 @@ from langchain_core.output_parsers import StrOutputParser
 from app.core.config import get_llm, EMBEDDINGS
 from app.core.prompts import RAG_PROMPT_TEMPLATE
 
+import os
+
 logger = logging.getLogger(__name__)
 
 class RAGService:
     def __init__(self):
         self.llm = get_llm()
         self.vectorstore = PineconeVectorStore(
-            index_name="documind-enterprise",
+            index_name=os.getenv("PINECONE_INDEX_NAME", "documind-enterprise"),
             embedding=EMBEDDINGS,
             namespace="default"
         )

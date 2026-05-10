@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, MessageSquare, Trash2 } from "lucide-react"
+import { Plus, MessageSquare, Trash2, Pencil, Check, X } from "lucide-react"
 import { useChat } from "@/lib/chat-context"
 
 import {
@@ -17,9 +17,28 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
 } from "@/components/ui/sidebar"
+import { Input } from "@/components/ui/input"
 
 export function ChatSidebar() {
-  const { sessions, activeSessionId, createNewSession, setActiveSession, deleteSession } = useChat()
+  const { sessions, activeSessionId, createNewSession, setActiveSession, deleteSession, renameSession } = useChat()
+  const [editingId, setEditingId] = React.useState<string | null>(null)
+  const [editValue, setEditValue] = React.useState("")
+
+  const handleStartEdit = (id: string, currentTitle: string) => {
+    setEditingId(id)
+    setEditValue(currentTitle)
+  }
+
+  const handleSaveEdit = (id: string) => {
+    if (editValue.trim()) {
+      renameSession(id, editValue.trim())
+    }
+    setEditingId(null)
+  }
+
+  const handleCancelEdit = () => {
+    setEditingId(null)
+  }
 
   return (
     <Sidebar collapsible="icon">
@@ -59,23 +78,64 @@ export function ChatSidebar() {
               <SidebarMenu>
                 {sessions.map((session) => (
                   <SidebarMenuItem key={session.id}>
-                    <SidebarMenuButton 
-                      isActive={activeSessionId === session.id}
-                      onClick={() => setActiveSession(session.id)}
-                    >
-                      <MessageSquare className="size-4" />
-                      <span className="truncate">{session.title}</span>
-                    </SidebarMenuButton>
-                    <SidebarMenuAction
-                      showOnHover
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        deleteSession(session.id)
-                      }}
-                    >
-                      <Trash2 className="size-3 hover:text-destructive" />
-                      <span className="sr-only">Delete Chat</span>
-                    </SidebarMenuAction>
+                    {editingId === session.id ? (
+                      <div className="flex items-center gap-1 px-2 py-1 w-full">
+                        <Input
+                          value={editValue}
+                          onChange={(e) => setEditValue(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") handleSaveEdit(session.id)
+                            if (e.key === "Escape") handleCancelEdit()
+                          }}
+                          className="h-7 text-xs flex-1"
+                          autoFocus
+                        />
+                        <button 
+                          onClick={() => handleSaveEdit(session.id)}
+                          className="text-primary hover:text-primary/80"
+                        >
+                          <Check className="size-3" />
+                        </button>
+                        <button 
+                          onClick={handleCancelEdit}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </div>
+                    ) : (
+                      <>
+                        <SidebarMenuButton 
+                          isActive={activeSessionId === session.id}
+                          onClick={() => setActiveSession(session.id)}
+                          className="pr-14"
+                        >
+                          <MessageSquare className="size-4" />
+                          <span className="truncate">{session.title}</span>
+                        </SidebarMenuButton>
+                        <SidebarMenuAction
+                          showOnHover
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            handleStartEdit(session.id, session.title)
+                          }}
+                          className="right-7"
+                        >
+                          <Pencil className="size-3" />
+                          <span className="sr-only">Rename Chat</span>
+                        </SidebarMenuAction>
+                        <SidebarMenuAction
+                          showOnHover
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            deleteSession(session.id)
+                          }}
+                        >
+                          <Trash2 className="size-3 hover:text-destructive" />
+                          <span className="sr-only">Delete Chat</span>
+                        </SidebarMenuAction>
+                      </>
+                    )}
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>

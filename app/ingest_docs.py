@@ -28,7 +28,7 @@ def run_ingestion(document_path: str):
     
     # 5. Load (Upsert) to Pinecone[cite: 1]
     # We use .from_documents because it handles UUIDs and Metadata mapping for us.
-    index_name = "documind-enterprise"
+    index_name = os.getenv("PINECONE_INDEX_NAME", "documind-enterprise")
     
     print("📡 Uploading to Pinecone... This might take some moments.")
     vector_store = PineconeVectorStore.from_documents(

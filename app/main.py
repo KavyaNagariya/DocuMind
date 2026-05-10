@@ -1,4 +1,4 @@
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 import os
@@ -8,8 +8,14 @@ from app.ingest_docs import run_ingestion
 from pydantic import BaseModel
 from fastapi.responses import StreamingResponse
 import json
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
+limiter = Limiter(key_func=get_remote_address)
 app = FastAPI(title="Documind Enterprise v1.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Add CORS middleware
 app.add_middleware(
@@ -29,9 +35,10 @@ class ChatRequest(BaseModel):
 
 
 @app.post("/chat")
-async def chat(request: ChatRequest):
+@limiter.limit("5/minute")
+async def chat(data: ChatRequest, request: Request):
     async def event_generator():
-        async for chunk in rag_service.stream_answer(request.message, request.history):
+        async for chunk in rag_service.stream_answer(data.message, data.history):
             if chunk:
                 if chunk.startswith("__CITATIONS__"):
                     citations_json = chunk.replace("__CITATIONS__", "")
@@ -40,14 +47,16 @@ async def chat(request: ChatRequest):
                     payload = json.dumps({"token": chunk})
                     yield f"event: token\ndata: {payload}\n\n"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(event_generator(), media_type="text-event-stream")
 
 @app.post("/upload")
-async def upload_documents(files: List[UploadFile] = File(...)):
+@limiter.limit("5/minute")
+async def upload_documents(request: Request, files: List[UploadFile] = File(...)):
     uploaded_files = []
     errors = []
-    
+
     os.makedirs("documents", exist_ok=True)
+
     
     for file in files:
         if not file.filename.endswith(".pdf"):
