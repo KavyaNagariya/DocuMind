@@ -84,11 +84,6 @@ The frontend will be available at `http://localhost:3000`.
 
 ## 🛠️ Development & Tooling
 
-### Knowledge Graph
-This project uses **Graphify** to generate a navigable knowledge graph of the codebase and document relationships.
-- View reports in `graphify-out/GRAPH_REPORT.md`.
-- Open `graphify-out/graph.html` in your browser for an interactive visualization.
-
 ### Formatting & Linting
 - **Backend:** Uses `ruff` or `flake8` (optional).
 - **Frontend:** `bun run lint` and `bun run typecheck`.
@@ -136,5 +131,5 @@ Upload multiple PDF documents for ingestion.
     - `prompts.py`: System prompts for RAG.
   - `ingestion/`: Logic for loading, splitting, and embedding.
   - `services/`: Core RAG service implementation.
+- `frontend/`: Next.js frontend application.
 - `documents/`: Directory for source PDF documents.
-- `graphify-out/`: Knowledge graph visualizations (generated).
