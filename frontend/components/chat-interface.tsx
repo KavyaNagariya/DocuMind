@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Send, User, Bot, Loader2, MessageSquarePlus } from "lucide-react"
+import { Send, User, Bot, Loader2, MessageSquarePlus, Square } from "lucide-react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
 import { useChat, Message } from "@/lib/chat-context"
@@ -22,6 +22,7 @@ export function ChatInterface() {
   const { activeSession, addMessageToActiveSession, createNewSession, updateLastMessage } = useChat()
   const [input, setInput] = React.useState("")
   const [isLoading, setIsLoading] = React.useState(false)
+  const abortControllerRef = React.useRef<AbortController | null>(null)
   const scrollRef = React.useRef<HTMLDivElement>(null)
 
   const messages = React.useMemo(() => activeSession?.messages || [], [activeSession])
@@ -32,6 +33,14 @@ export function ChatInterface() {
     }
   }, [messages, isLoading])
 
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort()
+      abortControllerRef.current = null
+      setIsLoading(false)
+    }
+  }
+
   const handleSend = async () => {
     if (!input.trim() || isLoading || !activeSession) return
 
@@ -39,6 +48,9 @@ export function ChatInterface() {
     addMessageToActiveSession(userMessage)
     setInput("")
     setIsLoading(true)
+
+    const controller = new AbortController()
+    abortControllerRef.current = controller
 
     try {
       const history = [...messages, userMessage].map((m) => ({
@@ -52,11 +64,13 @@ export function ChatInterface() {
         headers: {
           "Content-Type": "application/json",
         },
+        signal: controller.signal,
         body: JSON.stringify({
           message: input,
           history: history,
         }),
       })
+
 
       if (!response.ok) {
         throw new Error("Chat request failed")
@@ -105,14 +119,19 @@ export function ChatInterface() {
           }
         }
       }
-    } catch (error) {
-      console.error(error)
-      addMessageToActiveSession({
-        role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
-      })
+    } catch (error: any) {
+      if (error.name === "AbortError") {
+        updateLastMessage({ content: " [Stopped by user]" }, true)
+      } else {
+        console.error(error)
+        addMessageToActiveSession({
+          role: "assistant",
+          content: "Sorry, I encountered an error. Please try again.",
+        })
+      }
     } finally {
       setIsLoading(false)
+      abortControllerRef.current = null
     }
   }
 
@@ -216,9 +235,15 @@ export function ChatInterface() {
             disabled={isLoading}
             className="flex-1"
           />
-          <Button size="icon" onClick={handleSend} disabled={isLoading || !input.trim()}>
-            <Send className="size-4" />
-          </Button>
+          {isLoading ? (
+            <Button size="icon" variant="destructive" onClick={handleStop}>
+              <Square className="size-4 fill-current" />
+            </Button>
+          ) : (
+            <Button size="icon" onClick={handleSend} disabled={!input.trim()}>
+              <Send className="size-4" />
+            </Button>
+          )}
         </div>
         <p className="text-[10px] text-center text-muted-foreground mt-2">
           DocuMind can make mistakes. Verify important information.
