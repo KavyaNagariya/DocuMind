@@ -17,7 +17,7 @@ DocuMind Enterprise is a robust, production-grade Retrieval-Augmented Generation
 
 - **Framework:** FastAPI
 - **RAG Engine:** LangChain (v0.3.x)
-- **LLM:** Google Gemini (via `gemini-2.5-flash`)
+- **LLM:** Google Gemini 
 - **Vector Database:** Pinecone
 - **Embeddings:** HuggingFace (`all-MiniLM-L6-v2`)
 - **Frontend:** Next.js 15 (App Router), TailwindCSS, Shadcn UI
