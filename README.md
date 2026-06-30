@@ -1,39 +1,62 @@
+<div align="center">
+
 # DocuMind Enterprise
 
-DocuMind Enterprise is a robust, production-grade Retrieval-Augmented Generation (RAG) application designed to search and interact with your private document archives. Built with FastAPI, LangChain, and Pinecone, it provides a powerful chat interface that handles complex multi-turn conversations with source citations.
+DocuMind Enterprise is a production-grade, context-aware Retrieval-Augmented Generation (RAG) platform designed to search and interact with private document archives securely.
 
-## 🚀 Features
+[![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=flat-square&logo=fastapi)](https://fastapi.tiangolo.com)
+[![Next.js](https://img.shields.io/badge/Next.js-16.1.7-black?style=flat-square&logo=next.js)](https://nextjs.org)
+[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-4.2.1-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com)
+[![LangChain](https://img.shields.io/badge/LangChain-0.3.x-1C3C3A?style=flat-square)](https://langchain.com)
+[![Google Gemini](https://img.shields.io/badge/Gemini-2.5--flash-4285F4?style=flat-square&logo=googlegemini)](https://deepmind.google/technologies/gemini/)
+[![Pinecone](https://img.shields.io/badge/Pinecone-Vector_DB-black?style=flat-square)](https://www.pinecone.io)
 
-- **Advanced RAG Pipeline:** Uses LangChain (v0.3.x) for efficient document retrieval and response generation.
-- **Contextual Query Rephrasing:** Automatically resolves references (like "it", "him", "then") in chat history to generate standalone search queries.
-- **Source Citations:** Every answer includes references to the specific documents and pages used to generate the response.
-- **API Rate Limiting:** Built-in protection against abuse using `slowapi` (5 requests/minute).
-- **Chat Management:** Create, rename, and delete chat sessions with persistent local storage.
-- **Pinecone Vector Store:** High-performance serverless vector search for lightning-fast retrievals.
-- **FastAPI Backend:** Modern, high-performance web API for seamless integration.
-- **Document Ingestion:** Automated pipeline for loading, splitting, and indexing PDF documents.
+[Overview](#overview) • [Key Features](#key-features) • [Tech Stack](#tech-stack) • [Getting Started](#getting-started) • [Project Structure](#project-structure) • [Usage](#usage)
 
-## 🛠️ Tech Stack
+</div>
 
-- **Framework:** FastAPI
-- **RAG Engine:** LangChain (v0.3.x)
-- **LLM:** Google Gemini 
-- **Vector Database:** Pinecone
-- **Embeddings:** HuggingFace (`all-MiniLM-L6-v2`)
-- **Frontend:** Next.js 15 (App Router), TailwindCSS, Shadcn UI
-- **Document Processing:** pypdf
+---
 
-## 📋 Prerequisites
+## Overview
 
-- Python 3.10+ (for local setup)
-- Docker & Docker Compose (for containerized setup)
-- [Pinecone API Key](https://www.pinecone.io/)
-- [Google AI API Key](https://aistudio.google.com/) (for Gemini)
-- [HuggingFace Token](https://huggingface.co/settings/tokens) (for model access)
+DocuMind Enterprise solves the challenge of employees manually sifting through hundreds of pages of corporate documentation (such as policies, guides, and SOPs). Ingesting this knowledge allows the platform to provide direct, fully-cited answers through an interactive web-based chat.
 
-## 🔧 Configuration
+> [!IMPORTANT]
+> **Anti-Hallucination Policy**: To ensure trust and compliance, the system is strictly constrained to the ingested documents. If a question cannot be answered using the provided context, the model will refuse to answer rather than inventing facts.
 
-Create a `.env` file in the root directory and add the following:
+---
+
+## Key Features
+
+- **Context-Locked RAG**: Utilizes a strict system contract prompting [RAGService](file:///C:/repositories/DocuMind_Enterprise/app/services/rag_service.py) to refuse answers not explicitly supported by context.
+- **Contextual Query Rephrasing**: Automatically resolves pronouns and context references (e.g., "it", "then") in conversation history, generating independent keyword-rich search queries.
+- **Verified Citations**: Injects page numbers, file sources, and text snippets into response metadata so every claim is instantly auditable.
+- **Real-Time Streaming**: Real-time token streaming using Server-Sent Events (SSE) for a premium UI typewriter effect.
+- **Built-in Rate Limiting**: Abuse prevention limiting users to 5 requests per minute using `slowapi`.
+- **Dockerized Architecture**: Simplified deployment using multi-stage builds and shared volumes for instant local setups.
+
+---
+
+## Tech Stack
+
+- **Backend**: FastAPI web framework, LangChain (v0.3.x), Pydantic
+- **Frontend**: Next.js 16 (App Router), React 19, TailwindCSS, Radix UI, Shadcn UI
+- **Embeddings & Model**: HuggingFace (`sentence-transformers/all-MiniLM-L6-v2`) mapped to CPU, running on Google Gemini (`gemini-2.5-flash`)
+- **Database**: Pinecone serverless vector index
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.10+ (if running manually)
+- Docker & Docker Compose
+- API Keys: Pinecone API Key, Google AI Studio Key (Gemini), HuggingFace Token
+
+### Environment Configuration
+
+Configure your environment variables in [.env](file:///C:/repositories/DocuMind_Enterprise/.env):
 
 ```env
 # AI & Database Keys
@@ -47,86 +70,83 @@ PINECONE_INDEX_NAME=documind-enterprise
 NEXT_PUBLIC_API_URL=http://localhost:8000
 ```
 
----
+### Docker Deployment (Recommended)
 
-## 🐳 Docker Deployment (Recommended)
-
-The easiest way to run the entire stack is using Docker Compose.
-
-1. **Build and start the containers:**
+1. Build and run containers in detached mode:
    ```bash
    docker-compose up --build -d
    ```
-
-2. **Access the application:**
-   - Frontend: [http://localhost:3000](http://localhost:3000)
-   - Backend API: [http://localhost:8000/docs](http://localhost:8000/docs)
-
-3. **Stop the containers:**
+2. Access the applications:
+   - Frontend Client: [http://localhost:3000](http://localhost:3000)
+   - Interactive Backend API docs: [http://localhost:8000/docs](http://localhost:8000/docs)
+3. Tear down the stack:
    ```bash
    docker-compose down
    ```
 
----
+### Manual Local Setup
 
-## ⚙️ Local Installation
+If you prefer running services independently:
 
-If you prefer to run the services manually:
-
-### 1. Backend Setup
-1. **Create a virtual environment:**
+#### 1. Backend Server
+1. Create and activate a Python virtual environment:
    ```bash
    python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   # On Windows:
+   .\venv\Scripts\activate
+   # On Unix:
+   source venv/bin/activate
    ```
-2. **Install dependencies:**
+2. Install the requirements:
    ```bash
    pip install -r requirements.txt
    ```
-3. **Run the server:**
+3. Boot the FastAPI server:
    ```bash
    uvicorn app.main:app --reload
    ```
 
-### 2. Frontend Setup
-1. **Install dependencies:**
+#### 2. Frontend Client
+1. Install client dependencies:
    ```bash
    cd frontend
-   npm install  # or bun install
+   npm install
    ```
-2. **Run the development server:**
+2. Launch the dev server:
    ```bash
-   npm run dev  # or bun run dev
+   npm run dev
    ```
 
 ---
 
-## 📖 Usage
+## Project Structure
 
-### 1. Ingest Documents
-Place your PDF files in the `documents/` directory. You can use the UI to upload files or run the ingestion script manually:
+- **[app/](file:///C:/repositories/DocuMind_Enterprise/app)**: Core FastAPI application.
+  - **[app/main.py](file:///C:/repositories/DocuMind_Enterprise/app/main.py)**: REST API endpoints (`/chat`, `/upload`) with rate limiting.
+  - **[app/services/rag_service.py](file:///C:/repositories/DocuMind_Enterprise/app/services/rag_service.py)**: Implements history-aware context rephrasing and streaming QA retrieval chains.
+  - **[app/ingest_docs.py](file:///C:/repositories/DocuMind_Enterprise/app/ingest_docs.py)**: Processing script orchestrating document chunking and indexing.
+- **[frontend/](file:///C:/repositories/DocuMind_Enterprise/frontend)**: Next.js client application styled with TailwindCSS & Shadcn UI components.
+- **[documents/](file:///C:/repositories/DocuMind_Enterprise/documents)**: Local folder holding the source PDF files (volume-mapped in Docker).
 
-```bash
-python -m app.ingest_docs
-```
+---
 
-### 2. Rate Limiting
-The API is restricted to **5 requests per minute** per user. You can test this using the provided script:
-```bash
-python test_rate_limit.py
-```
+## Usage
 
-## 🛣️ API Endpoints
+### Document Ingestion
 
-### `POST /chat`
-Interact with the RAG service. Supports streaming responses and citations.
+Place target PDF documents in the `documents/` directory, then process them into Pinecone:
 
-### `POST /upload`
-Upload multiple PDF documents for automated ingestion.
+- **Via GUI**: Use the document upload option directly inside the web client.
+- **Via CLI**:
+  ```bash
+  python -m app.ingest_docs
+  ```
 
-## 📁 Project Structure
+### API Rate Limit Testing
 
-- `app/`: FastAPI backend implementation.
-- `frontend/`: Next.js frontend application.
-- `documents/`: Directory for source PDF documents (synced with Docker volume).
-- `test_rate_limit.py`: Utility script to verify API rate limiting.
+> [!TIP]
+> The `/chat` and `/upload` endpoints limit requests to 5 per minute per IP address. You can run the rate-limiting verification script to inspect this behavior:
+> ```bash
+> python test_rate_limit.py
+> ```
+
